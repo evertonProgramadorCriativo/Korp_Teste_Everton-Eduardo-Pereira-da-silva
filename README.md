@@ -151,37 +151,27 @@ catch {
 ```
 
  
-### Testando Tratarive de erro com produto ja existem no banco de dados
+### Testando Tratativa de erro com produto ja existem no banco de dados
 
 
 ```bash
-$body = @{
-    quantidade = 23
-} | ConvertTo-Json
-
-try {
-    Invoke-RestMethod `
-        -Uri "http://localhost:5001/api/produtos/2/debitar" `
-        -Method Post `
-        -ContentType "application/json" `
-        -Body $body
-}
-catch {
-    $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
-    $responseBody = $reader.ReadToEnd()
-    $reader.Close()
-
-    Write-Host "Resposta da API:"
-    Write-Host $responseBody
-}
+ 
 
 
 C:\Users\ogum\Documents\Korp_Teste_Everton_Eduardo> try {                              
->>     Invoke-RestMethod `
->>         -Uri "http://localhost:5001/api/produtos" `
->>         -ContentType "application/json" `
->>         -Body $body
->> }
+ $body = @{
+    codigo = "P001"
+    descricao = "Caneta azul"
+    saldo = 10
+} | ConvertTo-Json
+try {
+Invoke-RestMethod `
+    -Uri "http://localhost:5001/api/produtos" `
+    -Method Post `
+    -ContentType "application/json" `
+    -Body $body 
+
+}
 >> catch {
 >>     Write-Host "Status HTTP:" $_.Exception.Response.StatusCode.value__
 >>     
@@ -202,6 +192,68 @@ PS C:\Users\ogum\Documents\Everton_Eduardo>
 
 ```
 
+### Testando tratamento de erro para codigo do produto já existente
+
+
+```bash
+
+C:\Users\ogum\Documents\Korp_Teste_Everton_Eduardo> try  $body = @{
+>>     codigo = "P001"
+>>     descricao = "Caneta azul"
+>> } | ConvertTo-Json
+PS C:\Users\ogum\Documents\Korp_Teste_Everton_Eduardo> try {
+>> Invoke-RestMethod `
+>>     -Uri "http://localhost:5001/api/produtos" `
+>>     -Method Post `
+>>     -ContentType "application/json" `
+>>     -Body $body 
+>> 
+>> }
+>> catch {
+>>     $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+>>     $responseBody = $reader.ReadToEnd()
+>>     $reader.Close()
+>> 
+>>     Write-Host "Resposta da API:"
+>>     Write-Host $responseBody
+>> }
+Resposta da API:
+{"mensagem":"Já existe um produto com o código 'P001'."}
+```
+
+### Testando tratamento de erro SaldoInsuficienteException,débito maior que o saldo existente.
+
+
+```bash
+
+PS C:\Users\ogum\Documents\Korp_Teste_Everton_Eduardo> $body = @{
+    quantidade = 23
+} | ConvertTo-Json
+
+try {
+    Invoke-RestMethod `
+        -Uri "http://localhost:5001/api/produtos/1/debitar" `
+        -Method Post `
+        -ContentType "application/json" `
+        -Body $body
+}
+catch {
+    Write-Host "Status HTTP:" $_.Exception.Response.StatusCode.value__
+
+    $reader = New-Object System.IO.StreamReader(
+        $_.Exception.Response.GetResponseStream()
+    )
+
+    $responseBody = $reader.ReadToEnd()
+    $reader.Close()
+
+    Write-Host "Resposta da API:"
+    Write-Host $responseBody
+}
+Status HTTP: 400
+Resposta da API:
+Saldo insuficiente para o produto 'P001'. Saldo atual: 6, quantidade solicitada: 23.
+```
 ### Verificar os registros no PostgreSQL
 
 ```bash
