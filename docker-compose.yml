@@ -1,0 +1,34 @@
+version: "3.9"
+
+services:
+  postgres-estoque:
+    image: postgres:16-alpine
+    container_name: postgres-estoque
+    environment:
+      POSTGRES_USER: korp
+      POSTGRES_PASSWORD: korp123
+      POSTGRES_DB: estoque
+    ports:
+      - "5433:5432"
+    volumes:
+      - postgres_estoque_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U korp -d estoque"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  estoque-api:
+    build:
+      context: ./estoque-api
+    container_name: estoque-api
+    depends_on:
+      postgres-estoque:
+        condition: service_healthy
+    environment:
+      ConnectionStrings__DefaultConnection: "Host=postgres-estoque;Port=5432;Database=estoque;Username=korp;Password=korp123"
+    ports:
+      - "5001:8080"
+
+volumes:
+  postgres_estoque_data:
