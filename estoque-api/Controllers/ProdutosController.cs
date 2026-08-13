@@ -79,12 +79,7 @@ public class ProdutosController : ControllerBase
     [HttpGet("{id:int}")]
     public async Task<ActionResult<ProdutoResponseDto>> ObterPorId(int id)
     {
-        var produto = await _context.Produtos.FindAsync(id);
-
-        if (produto is null)
-        {
-            return NotFound(new { mensagem = $"Produto com id {id} não encontrado." });
-        }
+        var produto = await BuscarOuFalhar(id);
 
         return Ok(ParaDto(produto));
     }
@@ -93,25 +88,38 @@ public class ProdutosController : ControllerBase
     [HttpPost("{id:int}/debitar")]
     public async Task<ActionResult<ProdutoResponseDto>> Debitar(int id, [FromBody] AtualizarSaldoDto dto)
     {
-        var produto = await _context.Produtos.FindAsync(id);
-        if (produto == null)
-        {
-            return BadRequest($"Produto com id {id} não encontrado.");
-        }
+        var produto = await BuscarOuFalhar(id);
 
         if (dto.Quantidade > produto.Saldo)
         {
-            return BadRequest(
+            throw new SaldoInsuficienteException(
                 $"Saldo insuficiente para o produto '{produto.Codigo}'. " +
-                $"Saldo atual: {produto.Saldo}, quantidade solicitada: {dto.Quantidade}."
-            );
+                $"Saldo atual: {produto.Saldo}, quantidade solicitada: {dto.Quantidade}.");
         }
-
 
         produto.Saldo -= dto.Quantidade;
         await _context.SaveChangesAsync();
 
         return Ok(ParaDto(produto));
+    }
+
+    // Crédito de saldo (ex: estorno, reposição de estoque)
+    [HttpPost("{id:int}/creditar")]
+    public async Task<ActionResult<ProdutoResponseDto>> Creditar(int id, [FromBody] AtualizarSaldoDto dto)
+    {
+        var produto = await BuscarOuFalhar(id);
+
+        produto.Saldo += dto.Quantidade;
+        await _context.SaveChangesAsync();
+
+        return Ok(ParaDto(produto));
+    }
+    // Método auxiliar para buscar um produto pelo id ou lançar uma exceção NotFoundException
+    private async Task<Produto> BuscarOuFalhar(int id)
+    {
+        var produto = await _context.Produtos.FindAsync(id);
+
+        return produto ?? throw new NotFoundException($"Produto com id {id} não encontrado.");
     }
     // Método auxiliar para converter Produto em ProdutoResponseDto
     private static ProdutoResponseDto ParaDto(Produto produto) => new()
