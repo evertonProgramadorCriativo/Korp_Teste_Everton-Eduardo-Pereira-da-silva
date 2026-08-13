@@ -29,6 +29,16 @@ services:
       ConnectionStrings__DefaultConnection: "Host=postgres-estoque;Port=5432;Database=estoque;Username=korp;Password=korp123"
     ports:
       - "5001:8080"
-
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    depends_on:
+      - estoque-api
+    ports:
+      - "4200:4200"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
 volumes:
   postgres_estoque_data:

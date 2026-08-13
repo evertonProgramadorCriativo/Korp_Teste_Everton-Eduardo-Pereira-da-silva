@@ -1,0 +1,76 @@
+<section class="page">
+  <header class="page-header">
+    <div>
+      <span class="eyebrow">Serviço de Estoque</span>
+      <h1>Produtos</h1>
+    </div>
+    <button type="button" class="btn-ghost" (click)="carregarProdutos()" [disabled]="carregando">
+      {{ carregando ? 'Atualizando…' : 'Atualizar lista' }}
+    </button>
+  </header>
+
+  @if (erro) {
+    <div class="alerta">{{ erro }}</div>
+  }
+
+  <form class="form-card" [formGroup]="form" (ngSubmit)="cadastrar()">
+    <div class="campo">
+      <label for="codigo">Código</label>
+      <input id="codigo" type="text" formControlName="codigo" placeholder="P001" />
+      @if (form.controls.codigo.invalid && form.controls.codigo.touched) {
+        <span class="erro-campo">Informe o código do produto.</span>
+      }
+    </div>
+
+    <div class="campo campo-grande">
+      <label for="descricao">Descrição</label>
+      <input id="descricao" type="text" formControlName="descricao" placeholder="Nome do produto" />
+      @if (form.controls.descricao.invalid && form.controls.descricao.touched) {
+        <span class="erro-campo">Informe a descrição.</span>
+      }
+    </div>
+
+    <div class="campo">
+      <label for="saldo">Saldo inicial</label>
+      <input id="saldo" type="number" min="0" formControlName="saldo" />
+      @if (form.controls.saldo.invalid && form.controls.saldo.touched) {
+        <span class="erro-campo">Saldo não pode ser negativo.</span>
+      }
+    </div>
+
+    <button type="submit" class="btn-primary" [disabled]="enviando">
+      {{ enviando ? 'Salvando…' : 'Cadastrar produto' }}
+    </button>
+  </form>
+
+  <div class="tabela-card">
+    @if (carregando) {
+      <p class="estado-vazio">Carregando produtos…</p>
+    } @else if (produtos.length === 0) {
+      <p class="estado-vazio">Nenhum produto cadastrado ainda. Use o formulário acima para começar.</p>
+    } @else {
+      <table>
+        <thead>
+          <tr>
+            <th>Código</th>
+            <th>Descrição</th>
+            <th class="col-saldo">Saldo</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (produto of produtos; track produto.id) {
+            <tr>
+              <td class="codigo">{{ produto.codigo }}</td>
+              <td>{{ produto.descricao }}</td>
+              <td class="col-saldo">
+                <span class="badge" [class.badge-baixo]="saldoBaixo(produto)">
+                  {{ produto.saldo }}
+                </span>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    }
+  </div>
+</section>
