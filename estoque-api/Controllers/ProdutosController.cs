@@ -39,7 +39,7 @@ public class ProdutosController : ControllerBase
 
         if (codigoJaExiste)
         {
-            return Conflict(new { mensagem = $"Já existe um produto com o código '{dto.Codigo}'." });
+            throw new ConflictException($"Já existe um produto com o código '{dto.Codigo}'.");
         }
         // Cria o produto
         var produto = new Produto

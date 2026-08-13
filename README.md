@@ -126,6 +126,7 @@ Invoke-RestMethod `
  
 ### Exemplo no Windows 10 PowerShell com tratamento de erros
 
+
 ```bash
 $body = @{
     quantidade = 23
@@ -146,6 +147,59 @@ catch {
     Write-Host "Resposta da API:"
     Write-Host $responseBody
 }
+ 
+```
+
+ 
+### Testando Tratarive de erro com produto ja existem no banco de dados
+
+
+```bash
+$body = @{
+    quantidade = 23
+} | ConvertTo-Json
+
+try {
+    Invoke-RestMethod `
+        -Uri "http://localhost:5001/api/produtos/2/debitar" `
+        -Method Post `
+        -ContentType "application/json" `
+        -Body $body
+}
+catch {
+    $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+    $responseBody = $reader.ReadToEnd()
+    $reader.Close()
+
+    Write-Host "Resposta da API:"
+    Write-Host $responseBody
+}
+
+
+C:\Users\ogum\Documents\Korp_Teste_Everton_Eduardo> try {                              
+>>     Invoke-RestMethod `
+>>         -Uri "http://localhost:5001/api/produtos" `
+>>         -ContentType "application/json" `
+>>         -Body $body
+>> }
+>> catch {
+>>     Write-Host "Status HTTP:" $_.Exception.Response.StatusCode.value__
+>>     
+>>     $reader = New-Object System.IO.StreamReader(
+>>         $_.Exception.Response.GetResponseStream()
+>>     )
+>> 
+>>     Write-Host "Mensagem da API:"
+>>     Write-Host $reader.ReadToEnd()
+>> 
+>>     $reader.Close()
+>> }
+Status HTTP: 409
+Mensagem da API:
+{"mensagem":"Já existe um produto com o código 'P001'."}
+PS C:\Users\ogum\Documents\Everton_Eduardo> 
+
+
 ```
 
 ### Verificar os registros no PostgreSQL
