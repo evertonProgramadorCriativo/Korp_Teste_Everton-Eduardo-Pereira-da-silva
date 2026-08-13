@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
 namespace EstoqueApi.Controllers;
- 
+
 //Informa ao ASP.NET Core que esta classe será utilizada como um Controller de uma API [ApiController]
 [ApiController]
 
@@ -20,7 +20,7 @@ public class ProdutosController : ControllerBase
     private readonly EstoqueDbContext _context;
 
     public ProdutosController(EstoqueDbContext context)
-    { 
+    {
         //_context representa o EstoqueDbContext. Ele é usado para interagir com o banco de dados, permitindo realizar operações como consultas, inserções, atualizações e exclusões de produtos.
         _context = context;
     }
@@ -33,7 +33,7 @@ public class ProdutosController : ControllerBase
         {
             return BadRequest(ModelState);
         }
-           // Verifica se já existe um produto com o mesmo código
+        // Verifica se já existe um produto com o mesmo código
         var codigoJaExiste = await _context.Produtos
             .AnyAsync(p => p.Codigo == dto.Codigo);
 
@@ -41,7 +41,7 @@ public class ProdutosController : ControllerBase
         {
             return Conflict(new { mensagem = $"Já existe um produto com o código '{dto.Codigo}'." });
         }
-          // Cria o produto
+        // Cria o produto
         var produto = new Produto
         {
             Codigo = dto.Codigo,
@@ -88,7 +88,32 @@ public class ProdutosController : ControllerBase
 
         return Ok(ParaDto(produto));
     }
-        // Método auxiliar para converter Produto em ProdutoResponseDto
+    // Débito de saldo (usado, por exemplo, na impressão da
+    // nota fiscal). Regra: nunca deixa o saldo ficar negativo.
+    [HttpPost("{id:int}/debitar")]
+    public async Task<ActionResult<ProdutoResponseDto>> Debitar(int id, [FromBody] AtualizarSaldoDto dto)
+    {
+        var produto = await _context.Produtos.FindAsync(id);
+        if (produto == null)
+        {
+            return BadRequest($"Produto com id {id} não encontrado.");
+        }
+
+        if (dto.Quantidade > produto.Saldo)
+        {
+            return BadRequest(
+                $"Saldo insuficiente para o produto '{produto.Codigo}'. " +
+                $"Saldo atual: {produto.Saldo}, quantidade solicitada: {dto.Quantidade}."
+            );
+        }
+
+
+        produto.Saldo -= dto.Quantidade;
+        await _context.SaveChangesAsync();
+
+        return Ok(ParaDto(produto));
+    }
+    // Método auxiliar para converter Produto em ProdutoResponseDto
     private static ProdutoResponseDto ParaDto(Produto produto) => new()
     {
         Id = produto.Id,
